@@ -33,70 +33,104 @@ const MovieCard: React.FC<MovieCardProps> = ({
 
   return (
     <motion.div
-      className="card-premium group cursor-pointer"
-      whileHover={{ y: -8, scale: 1.02 }}
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
+      className="card-premium rounded-3xl shadow-lg hover:shadow-xl transition-all duration-400 overflow-hidden group cursor-pointer relative"
+      whileHover={{ y: -4, scale: 1.01 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ 
-        duration: 0.5, 
-        delay: index * 0.1,
-        type: "spring",
-        stiffness: 100
+        duration: 0.15,
+        ease: "easeOut"
       }}
       onClick={() => onMovieClick(movie)}
     >
-      <div className="relative overflow-hidden rounded-t-2xl">
+      <div className="relative overflow-hidden rounded-t-3xl">
+        {/* Enhanced Discount Badge */}
+        <motion.div 
+          className="absolute top-4 left-4 bg-gradient-to-r from-teal-500 to-cyan-500 dark-mode:from-blue-600 dark-mode:to-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold z-10 shadow-lg dark-mode:shadow-blue-500/30 border dark-mode:border-blue-400/30"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          HD 4K
+        </motion.div>
+        
+        {/* Enhanced Heart Icon */}
+        <motion.button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(movie);
+          }}
+          className="absolute top-4 right-4 w-10 h-10 bg-white/90 dark-mode:bg-gray-800/90 hover:bg-white dark-mode:hover:bg-gray-700 rounded-full flex items-center justify-center shadow-lg dark-mode:shadow-gray-900/50 z-10 transition-all duration-300 border dark-mode:border-gray-600/50"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.1 }}
+        >
+          <Heart className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-current' : 'text-gray-600 dark-mode:text-gray-400'}`} />
+        </motion.button>
+        
         {/* Movie Poster */}
         <motion.img
           src={imageUrl}
           alt={movie.title}
-          className="w-full h-72 sm:h-80 object-cover transition-transform duration-700 group-hover:scale-110"
-          whileHover={{ scale: 1.1 }}
+          className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {
             (e.target as HTMLImageElement).src = '/api/placeholder/300/450';
           }}
         />
         
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        {/* Play Button Overlay */}
-        <motion.div 
-          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          whileHover={{ scale: 1.1 }}
+      </div>
+
+      {/* Movie Info */}
+      <div className="p-6">
+        <motion.h3 
+          className="font-bold text-lg mb-2 line-clamp-2 transition-all duration-150 text-gray-900 dark-mode:text-white"
+          whileHover={{ scale: 1.01 }}
+          transition={{ duration: 0.1 }}
         >
+          {movie.title}
+        </motion.h3>
+        
+        <p className="text-gray-600 dark-mode:text-gray-300 text-sm mb-3 line-clamp-2">
+          {movie.overview}
+        </p>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <span className="bg-blue-100 dark-mode:bg-blue-900/50 text-blue-800 dark-mode:text-blue-300 px-2 py-1 rounded-full text-xs font-medium border dark-mode:border-blue-500/30">
+              Action
+            </span>
+            <div className="flex items-center space-x-1 text-gray-500 dark-mode:text-gray-400 text-sm">
+              <Star className="h-4 w-4 text-yellow-500" fill="currentColor" />
+              <span className="font-medium">{movie.vote_average.toFixed(1)}</span>
+            </div>
+          </div>
+          <span className="text-gray-500 dark-mode:text-gray-400 text-sm">{releaseYear}</span>
+        </div>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-gray-900 dark-mode:text-white">
+            <span className="text-2xl font-bold">Free</span>
+            <span className="text-sm text-gray-500 dark-mode:text-gray-400 line-through ml-2">$9.99</span>
+          </div>
+          <div className="flex items-center space-x-1 text-green-600 dark-mode:text-green-400 text-sm">
+            <div className="w-2 h-2 bg-green-500 dark-mode:bg-green-400 rounded-full animate-pulse"></div>
+            <span className="font-medium">Available</span>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
           <motion.button
-            className="bg-white/20 backdrop-blur-sm text-white p-4 rounded-full hover:bg-white/30 transition-all duration-300 glow-effect"
-            whileHover={{ scale: 1.2, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
+            className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-500 text-white py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            transition={{ duration: 0.1 }}
             onClick={(e) => {
               e.stopPropagation();
               onMovieClick(movie);
             }}
           >
-            <Play className="h-6 w-6 ml-1" />
-          </motion.button>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <div className="absolute top-3 right-3 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <motion.button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFavorite(movie);
-            }}
-            className={`p-2.5 rounded-full backdrop-blur-sm transition-all duration-300 ${
-              isFavorite
-                ? 'bg-red-500/80 text-white shadow-lg shadow-red-500/30'
-                : 'bg-black/30 text-white hover:bg-red-500/80 hover:shadow-lg hover:shadow-red-500/30'
-            }`}
-            whileHover={{ scale: 1.1, rotate: 10 }}
-            whileTap={{ scale: 0.9 }}
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Heart className="h-4 w-4" fill={isFavorite ? 'currentColor' : 'none'} />
+            <Play className="w-4 h-4" />
+            Watch Now
           </motion.button>
           
           <motion.button
@@ -104,110 +138,20 @@ const MovieCard: React.FC<MovieCardProps> = ({
               e.stopPropagation();
               onToggleWatchlist(movie);
             }}
-            className={`p-2.5 rounded-full backdrop-blur-sm transition-all duration-300 ${
+            className={`px-4 py-3 rounded-xl border-2 transition-all duration-300 ${
               isInWatchlist
-                ? 'bg-blue-500/80 text-white shadow-lg shadow-blue-500/30'
-                : 'bg-black/30 text-white hover:bg-blue-500/80 hover:shadow-lg hover:shadow-blue-500/30'
+                ? 'bg-blue-50 dark-mode:bg-blue-900/30 border-blue-500 dark-mode:border-blue-400 text-blue-600 dark-mode:text-blue-400'
+                : 'border-gray-300 dark-mode:border-gray-600 text-gray-600 dark-mode:text-gray-400 hover:border-gray-400 dark-mode:hover:border-gray-500'
             }`}
-            whileHover={{ scale: 1.1, rotate: -10 }}
-            whileTap={{ scale: 0.9 }}
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.1 }}
           >
-            <Bookmark className="h-4 w-4" fill={isInWatchlist ? 'currentColor' : 'none'} />
+            <Bookmark className="w-5 h-5" fill={isInWatchlist ? 'currentColor' : 'none'} />
           </motion.button>
         </div>
-
-        {/* Rating Badge */}
-        <motion.div 
-          className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white px-3 py-1.5 rounded-full flex items-center space-x-1.5"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Star className="h-3.5 w-3.5 text-yellow-400" fill="currentColor" />
-          <span className="text-sm font-semibold">{movie.vote_average.toFixed(1)}</span>
-        </motion.div>
-
-        {/* Quality Badge */}
-        <motion.div 
-          className="absolute bottom-3 left-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2.5 py-1 rounded-full text-xs font-bold"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          HD
-        </motion.div>
       </div>
 
-      {/* Movie Info */}
-      <div className="p-5">
-        <motion.h3 
-          className="text-white font-bold text-lg mb-2 line-clamp-2 group-hover:text-gradient transition-all duration-300"
-          whileHover={{ scale: 1.02 }}
-        >
-          {movie.title}
-        </motion.h3>
-        
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-4 text-white/60 text-sm">
-            <div className="flex items-center space-x-1">
-              <Calendar className="h-4 w-4" />
-              <span>{releaseYear}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Eye className="h-4 w-4" />
-              <span>{movie.vote_count}</span>
-            </div>
-          </div>
-          
-          <motion.div 
-            className="flex items-center space-x-1 text-green-400 text-sm font-medium"
-            whileHover={{ scale: 1.05 }}
-          >
-            <Clock className="h-4 w-4" />
-            <span>2h 15m</span>
-          </motion.div>
-        </div>
-
-        <motion.p 
-          className="text-white/70 text-sm line-clamp-3 leading-relaxed"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          {movie.overview}
-        </motion.p>
-
-        {/* Action Bar */}
-        <motion.div 
-          className="flex items-center justify-between mt-4 pt-4 border-t border-white/10"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-green-400 text-xs font-medium">Available</span>
-          </div>
-          
-          <motion.button
-            className="text-white/60 hover:text-white text-sm font-medium transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            More Info →
-          </motion.button>
-        </motion.div>
-      </div>
-
-      {/* Hover glow effect */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl opacity-0 blur-xl -z-10"
-        whileHover={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      />
     </motion.div>
   );
 };

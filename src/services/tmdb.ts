@@ -12,7 +12,17 @@ const tmdbApi = axios.create({
   params: {
     api_key: API_KEY,
   },
+  timeout: 10000,
 });
+
+// Add error handling to prevent crashes
+tmdbApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.warn('TMDB API Error:', error.message);
+    return Promise.reject(error);
+  }
+);
 
 export const movieService = {
   getImageUrl: (path: string) => `${IMAGE_BASE_URL}${path}`,

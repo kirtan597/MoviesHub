@@ -12,8 +12,8 @@ interface MovieModalProps {
   isInWatchlist: boolean;
   onToggleFavorite: (movie: Movie) => void;
   onToggleWatchlist: (movie: Movie) => void;
-  reviews: UserReview[];
-  onAddReview: (review: Omit<UserReview, 'id' | 'date'>) => void;
+  reviews?: UserReview[];
+  onAddReview?: (review: Omit<UserReview, 'id' | 'date'>) => void;
 }
 
 const MovieModal: React.FC<MovieModalProps> = ({
@@ -58,19 +58,21 @@ const MovieModal: React.FC<MovieModalProps> = ({
     e.preventDefault();
     if (!movie || !userRating || !userReview.trim() || !userName.trim()) return;
 
-    onAddReview({
-      movieId: movie.id,
-      rating: userRating,
-      review: userReview.trim(),
-      userName: userName.trim(),
-    });
+    if (onAddReview) {
+      onAddReview({
+        movieId: movie.id,
+        rating: userRating,
+        review: userReview.trim(),
+        userName: userName.trim(),
+      });
+    }
 
     setUserRating(0);
     setUserReview('');
     setUserName('');
   };
 
-  const movieReviews = reviews.filter(review => review.movieId === movie?.id);
+  const movieReviews = reviews?.filter(review => review.movieId === movie?.id) || [];
 
   if (!movie) return null;
 

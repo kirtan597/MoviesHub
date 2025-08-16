@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Movie, MovieResponse } from '../types/movie';
 import { movieService } from '../services/tmdb';
 
@@ -16,10 +16,17 @@ export function useMovies(category: string, genreId?: number) {
     loadMovies(1);
   }, [category, genreId]);
 
-  const loadMovies = async (pageNum: number) => {
+  const loadMovies = useCallback(async (pageNum: number) => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Prevent infinite loops
+      if (pageNum > 500) {
+        setError('Maximum pages reached');
+        setLoading(false);
+        return;
+      }
       
       let response: MovieResponse;
       
@@ -59,11 +66,16 @@ export function useMovies(category: string, genreId?: number) {
       setHasMore(pageNum < response.total_pages);
       setPage(pageNum);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.warn('Movie loading error:', err);
+      setError('Unable to load movies. Using offline mode.');
+      // Set some dummy data to prevent blank screen
+      if (pageNum === 1) {
+        setMovies([]);
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, genreId]);
 
   const loadMore = () => {
     if (hasMore && !loading) {

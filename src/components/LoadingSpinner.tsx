@@ -51,9 +51,9 @@ const LoadingSpinner: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <h3 className="text-xl font-semibold text-gradient mb-2">Loading Movies</h3>
+        <h3 className="text-2xl font-bold rainbow-text text-display mb-2">Loading KPXHub</h3>
         <div className="flex items-center justify-center space-x-2 text-white/60">
-          <span>Discovering amazing content</span>
+          <span>Preparing your cinematic experience</span>
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}

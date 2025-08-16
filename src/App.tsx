@@ -1,263 +1,373 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Movie } from './types/movie';
+import { useMovies } from './hooks/useMovies';
+import { useSearch } from './hooks/useSearch';
+import { useLocalStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
+import HeroSection from './components/HeroSection';
 import CategoryTabs from './components/CategoryTabs';
 import MovieGrid from './components/MovieGrid';
 import MovieModal from './components/MovieModal';
 import LoadingSpinner from './components/LoadingSpinner';
 import EmptyState from './components/EmptyState';
-import { useMovies } from './hooks/useMovies';
-import { useSearch } from './hooks/useSearch';
-import { useLocalStorage } from './hooks/useLocalStorage';
-import { Movie, UserReview, FavoriteItem, WatchlistItem } from './types/movie';
+import ErrorBoundary from './components/ErrorBoundary';
+import ParticleBackground from './components/ParticleBackground';
+import AuthPrompt from './components/AuthPrompt';
+import AuthModal from './components/AuthModal';
+import UserProfile from './components/UserProfile';
+import Toast from './components/Toast';
+import Footer from './components/Footer';
+
+import './index.css';
 
 function App() {
   const [activeCategory, setActiveCategory] = useState('popular');
   const [selectedGenre, setSelectedGenre] = useState<number | undefined>();
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('home');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [authPromptFeature, setAuthPromptFeature] = useState('');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [user, setUser] = useLocalStorage<{name: string, email: string} | null>('kpxhub-user', null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [toast, setToast] = useState<{isOpen: boolean, type: 'success' | 'error', message: string}>({isOpen: false, type: 'success', message: ''});
+  const [favorites, setFavorites] = useLocalStorage<number[]>('kpxhub-favorites', []);
+  const [watchlist, setWatchlist] = useLocalStorage<number[]>('kpxhub-watchlist', []);
+  const [appError, setAppError] = useState<string | null>(null);
 
-  // Local storage hooks
-  const [favorites, setFavorites] = useLocalStorage<FavoriteItem[]>('moviehub-favorites', []);
-  const [watchlist, setWatchlist] = useLocalStorage<WatchlistItem[]>('moviehub-watchlist', []);
-  const [reviews, setReviews] = useLocalStorage<UserReview[]>('moviehub-reviews', []);
+  // Error boundary for the app
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('App Error:', error);
+      setAppError('Something went wrong. Please refresh the page.');
+    };
+    
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
 
-  // Custom hooks
-  const { movies, loading, error, hasMore, loadMore } = useMovies(activeCategory, selectedGenre);
-  const { query, setQuery, results, loading: searchLoading, clearSearch } = useSearch();
+  if (appError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-600">
+        <div className="text-center text-white p-8">
+          <h1 className="text-4xl font-bold mb-4">KPXHub</h1>
+          <p className="text-xl mb-4">{appError}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-white text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  // Handle category change
+  const { movies = [], loading = false, error, hasMore = false, loadMore } = useMovies(activeCategory, selectedGenre) || {};
+  const { searchResults = [], searchLoading = false, searchError } = useSearch(searchQuery) || {};
+
+  // Get user's favorite and watchlist movies
+  const favoriteMovies = movies.filter(movie => favorites.includes(movie.id));
+  const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
+
+  const displayMovies = searchQuery ? searchResults : 
+    activeCategory === 'favorites' ? favoriteMovies :
+    activeCategory === 'watchlist' ? watchlistMovies : movies;
+  const isLoading = searchQuery ? searchLoading : loading;
+  const displayError = searchQuery ? searchError : error;
+
   const handleCategoryChange = (category: string, genreId?: number) => {
     setActiveCategory(category);
     setSelectedGenre(genreId);
-    setActiveTab('home');
+    setSearchQuery('');
   };
 
-  // Handle search
-  const handleSearch = (searchQuery: string) => {
-    setQuery(searchQuery);
-    if (searchQuery.trim()) {
-      setActiveTab('search');
-    } else {
-      setActiveTab('home');
-    }
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
 
-  // Handle tab change
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    clearSearch();
-    setIsMenuOpen(false);
-  };
-
-  // Handle movie click
   const handleMovieClick = (movie: Movie) => {
     setSelectedMovie(movie);
-    setIsModalOpen(true);
   };
 
-  // Handle favorite toggle
   const handleToggleFavorite = (movie: Movie) => {
-    const favoriteItem: FavoriteItem = {
-      id: movie.id,
-      title: movie.title,
-      poster_path: movie.poster_path,
-      release_date: movie.release_date,
-      vote_average: movie.vote_average,
-      addedDate: new Date().toISOString(),
-    };
-
-    setFavorites(prev => {
-      const exists = prev.find(item => item.id === movie.id);
-      if (exists) {
-        return prev.filter(item => item.id !== movie.id);
-      } else {
-        return [...prev, favoriteItem];
-      }
-    });
+    setFavorites(prev => 
+      prev.includes(movie.id)
+        ? prev.filter(id => id !== movie.id)
+        : [...prev, movie.id]
+    );
   };
 
-  // Handle watchlist toggle
   const handleToggleWatchlist = (movie: Movie) => {
-    const watchlistItem: WatchlistItem = {
-      id: movie.id,
-      title: movie.title,
-      poster_path: movie.poster_path,
-      release_date: movie.release_date,
-      vote_average: movie.vote_average,
-      addedDate: new Date().toISOString(),
-    };
+    setWatchlist(prev => 
+      prev.includes(movie.id)
+        ? prev.filter(id => id !== movie.id)
+        : [...prev, movie.id]
+    );
+  };
 
-    setWatchlist(prev => {
-      const exists = prev.find(item => item.id === movie.id);
-      if (exists) {
-        return prev.filter(item => item.id !== movie.id);
-      } else {
-        return [...prev, watchlistItem];
+  const handleAuthRequired = (feature: string) => {
+    if (user) {
+      if (feature === 'Favorites') {
+        setActiveCategory('favorites');
+        setSearchQuery('');
+      } else if (feature === 'Watchlist') {
+        setActiveCategory('watchlist');
+        setSearchQuery('');
       }
-    });
+      return;
+    }
+    setAuthPromptFeature(feature);
+    setShowAuthPrompt(true);
   };
 
-  // Handle add review
-  const handleAddReview = (reviewData: Omit<UserReview, 'id' | 'date'>) => {
-    const newReview: UserReview = {
-      ...reviewData,
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
+  const handleAuthSuccess = (userData: {name: string, email: string}, isSignup: boolean) => {
+    if (isSignup) {
+      // Show account created message but don't log in yet
+      setToast({isOpen: true, type: 'success', message: `✅ Sign-up successful! Welcome aboard, ${userData.name} 🍿`});
+    } else {
+      // Login success
+      setUser(userData);
+      setIsAuthModalOpen(false);
+      setToast({isOpen: true, type: 'success', message: '🔐 Signed in successfully — let\'s explore the world of movies together!'});
+    }
+    setTimeout(() => setToast(prev => ({...prev, isOpen: false})), 3000);
+  };
+
+  const handleSignOut = () => {
+    setUser(null);
+    setIsProfileOpen(false);
+    setToast({isOpen: true, type: 'success', message: 'Signed out successfully!'});
+    setTimeout(() => setToast(prev => ({...prev, isOpen: false})), 3000);
+  };
+
+  const handleMenuToggle = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
+      }
     };
-    setReviews(prev => [...prev, newReview]);
-  };
 
-  // Handle load more
-  const handleLoadMore = () => {
-    if (hasMore && !loading) {
-      loadMore();
-    }
-  };
-
-  // Get current movies based on active tab
-  const getCurrentMovies = () => {
-    switch (activeTab) {
-      case 'search':
-        return results;
-      case 'favorites':
-        return favorites.map(item => ({
-          ...item,
-          overview: '',
-          backdrop_path: '',
-          genre_ids: [],
-          vote_count: 0,
-        }));
-      case 'watchlist':
-        return watchlist.map(item => ({
-          ...item,
-          overview: '',
-          backdrop_path: '',
-          genre_ids: [],
-          vote_count: 0,
-        }));
-      default:
-        return movies;
-    }
-  };
-
-  const currentMovies = getCurrentMovies();
-  const isSearching = activeTab === 'search';
-  const isShowingPersonalList = activeTab === 'favorites' || activeTab === 'watchlist';
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      <Header
-        onSearch={handleSearch}
-        searchQuery={query}
-        onTabChange={handleTabChange}
-        activeTab={activeTab}
-        onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
-        isMenuOpen={isMenuOpen}
-      />
+    <ErrorBoundary>
+      <div className="min-h-screen relative overflow-x-hidden">
+        {/* Dynamic Background */}
+        <div className="dynamic-bg" />
+        <ParticleBackground />
+        
+        {/* Main Content */}
+        <div className="relative z-10">
+          <Header
+            onSearch={handleSearch}
+            searchQuery={searchQuery}
+            onTabChange={handleCategoryChange}
+            activeTab={activeCategory}
+            onMenuToggle={handleMenuToggle}
+            isMenuOpen={isMenuOpen}
+            onAuthRequired={handleAuthRequired}
+            user={user}
+            onProfileClick={() => setIsProfileOpen(true)}
+          />
 
-      {activeTab === 'home' && (
-        <CategoryTabs
-          activeCategory={activeCategory}
-          onCategoryChange={handleCategoryChange}
+          {!searchQuery && <HeroSection />}
+
+          <CategoryTabs
+            activeCategory={activeCategory}
+            onCategoryChange={handleCategoryChange}
+          />
+
+          <main className="container mx-auto px-6 py-12">
+            <AnimatePresence>
+              {isLoading ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex justify-center items-center min-h-[400px]"
+                >
+                  <LoadingSpinner />
+                </motion.div>
+              ) : displayError ? (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="text-center py-12"
+                >
+                  <div className="glass-strong rounded-2xl p-8 max-w-md mx-auto">
+                    <h3 className="text-xl font-bold text-white mb-4">Connection Issue</h3>
+                    <p className="text-white/70 mb-6">{displayError}</p>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="btn-primary"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </motion.div>
+              ) : displayMovies.length === 0 ? (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                >
+                  <EmptyState 
+                    message={
+                      searchQuery ? `No results found for "${searchQuery}"` :
+                      activeCategory === 'favorites' ? 'No favorite movies yet. Start liking movies to see them here!' :
+                      activeCategory === 'watchlist' ? 'No movies in watchlist yet. Add movies to watch later!' :
+                      'No movies found'
+                    }
+                    onReset={() => {
+                      setSearchQuery('');
+                      setActiveCategory('popular');
+                    }}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="movies"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div className="mb-8">
+                    <motion.h2 
+                      className="text-3xl font-bold text-white mb-2"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                    >
+                      {searchQuery ? `Search Results for "${searchQuery}"` : 
+                       activeCategory === 'favorites' ? 'Your Favorite Movies' :
+                       activeCategory === 'watchlist' ? 'Your Watchlist' :
+                       selectedGenre ? 'Genre Movies' : 
+                       activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1).replace('_', ' ')}
+                    </motion.h2>
+                    <motion.p 
+                      className="text-white/70"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      {activeCategory === 'favorites' ? `${displayMovies.length} favorite movies` :
+                       activeCategory === 'watchlist' ? `${displayMovies.length} movies in watchlist` :
+                       `${displayMovies.length} movies found`}
+                    </motion.p>
+                  </div>
+
+                  <MovieGrid
+                    movies={displayMovies}
+                    favorites={favorites}
+                    watchlist={watchlist}
+                    onToggleFavorite={handleToggleFavorite}
+                    onToggleWatchlist={handleToggleWatchlist}
+                    onMovieClick={handleMovieClick}
+                  />
+
+                  {hasMore && !searchQuery && (
+                    <motion.div 
+                      className="text-center mt-12"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.1 }}
+                    >
+                      <button
+                        onClick={loadMore}
+                        className="btn-primary"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Loading...' : 'Load More Movies'}
+                      </button>
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
+
+          <Footer />
+        </div>
+
+        {/* Modals */}
+        <AnimatePresence>
+          {selectedMovie && (
+            <MovieModal
+              movie={selectedMovie}
+              isOpen={!!selectedMovie}
+              onClose={() => setSelectedMovie(null)}
+              isFavorite={favorites.includes(selectedMovie.id)}
+              isInWatchlist={watchlist.includes(selectedMovie.id)}
+              onToggleFavorite={() => handleToggleFavorite(selectedMovie)}
+              onToggleWatchlist={() => handleToggleWatchlist(selectedMovie)}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isAuthModalOpen && (
+            <AuthModal
+              isOpen={isAuthModalOpen}
+              onClose={() => setIsAuthModalOpen(false)}
+              initialMode={authMode}
+              onAuthSuccess={handleAuthSuccess}
+              onError={(message) => {
+                setToast({isOpen: true, type: 'error', message});
+                setTimeout(() => setToast(prev => ({...prev, isOpen: false})), 3000);
+              }}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showAuthPrompt && (
+            <AuthPrompt
+              isOpen={showAuthPrompt}
+              onClose={() => setShowAuthPrompt(false)}
+              feature={authPromptFeature}
+              onSignUp={() => {
+                setShowAuthPrompt(false);
+                setAuthMode('signup');
+                setIsAuthModalOpen(true);
+              }}
+              onSignIn={() => {
+                setShowAuthPrompt(false);
+                setAuthMode('login');
+                setIsAuthModalOpen(true);
+              }}
+            />
+          )}
+        </AnimatePresence>
+
+        <UserProfile
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          user={user || {name: '', email: ''}}
+          onSignOut={handleSignOut}
         />
-      )}
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Content Header */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-3xl font-bold text-white mb-2">
-            {activeTab === 'search' && query
-              ? `Search results for "${query}"`
-              : activeTab === 'favorites'
-              ? 'Your Favorites'
-              : activeTab === 'watchlist'
-              ? 'Your Watchlist'
-              : 'Discover Movies'}
-          </h1>
-          <p className="text-slate-400">
-            {activeTab === 'search' && query
-              ? `${results.length} movies found`
-              : activeTab === 'favorites'
-              ? `${favorites.length} favorite movies`
-              : activeTab === 'watchlist'
-              ? `${watchlist.length} movies in your watchlist`
-              : 'Find your next favorite movie'}
-          </p>
-        </motion.div>
-
-        {/* Loading State */}
-        {(loading || searchLoading) && currentMovies.length === 0 && <LoadingSpinner />}
-
-        {/* Error State */}
-        {error && (
-          <motion.div
-            className="bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded-lg mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            {error}
-          </motion.div>
-        )}
-
-        {/* Empty State */}
-        {!loading && !searchLoading && currentMovies.length === 0 && (
-          <EmptyState
-            type={activeTab === 'search' ? 'search' : activeTab === 'favorites' ? 'favorites' : activeTab === 'watchlist' ? 'watchlist' : 'generic'}
-          />
-        )}
-
-        {/* Movie Grid */}
-        {currentMovies.length > 0 && (
-          <MovieGrid
-            movies={currentMovies}
-            favorites={favorites.map(item => item.id)}
-            watchlist={watchlist.map(item => item.id)}
-            onToggleFavorite={handleToggleFavorite}
-            onToggleWatchlist={handleToggleWatchlist}
-            onMovieClick={handleMovieClick}
-          />
-        )}
-
-        {/* Load More Button */}
-        {!isSearching && !isShowingPersonalList && hasMore && currentMovies.length > 0 && (
-          <motion.div
-            className="flex justify-center mt-12"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <button
-              onClick={handleLoadMore}
-              disabled={loading}
-              className="bg-amber-500 text-white px-8 py-3 rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {loading ? 'Loading...' : 'Load More'}
-            </button>
-          </motion.div>
-        )}
-      </main>
-
-      {/* Movie Modal */}
-      <MovieModal
-        movie={selectedMovie}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        isFavorite={selectedMovie ? favorites.some(item => item.id === selectedMovie.id) : false}
-        isInWatchlist={selectedMovie ? watchlist.some(item => item.id === selectedMovie.id) : false}
-        onToggleFavorite={handleToggleFavorite}
-        onToggleWatchlist={handleToggleWatchlist}
-        reviews={reviews}
-        onAddReview={handleAddReview}
-      />
-    </div>
+        <Toast
+          isOpen={toast.isOpen}
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(prev => ({...prev, isOpen: false}))}
+        />
+      </div>
+    </ErrorBoundary>
   );
 }
 

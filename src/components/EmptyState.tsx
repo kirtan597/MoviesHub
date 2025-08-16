@@ -3,11 +3,12 @@ import { motion } from 'framer-motion';
 import { Film, Search, Heart, Bookmark, Sparkles, Play } from 'lucide-react';
 
 interface EmptyStateProps {
-  type: 'search' | 'favorites' | 'watchlist' | 'generic';
   message?: string;
+  onReset?: () => void;
 }
 
-const EmptyState: React.FC<EmptyStateProps> = ({ type, message }) => {
+const EmptyState: React.FC<EmptyStateProps> = ({ message, onReset }) => {
+  const type = message?.includes('search') || message?.includes('results') ? 'search' : 'generic';
   const getConfig = () => {
     switch (type) {
       case 'search':
@@ -181,7 +182,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ type, message }) => {
         transition={{ delay: 1.2, duration: 0.4 }}
         whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.95 }}
-        onClick={() => window.location.reload()}
+        onClick={onReset || (() => window.location.reload())}
       >
         <Play className="h-5 w-5" />
         <span>Explore Movies</span>
