@@ -103,86 +103,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             {theme === 'volcano' ? '🌋 Volcano' : '🌌 Aurora'}
           </motion.button>
 
-          {/* Themed Backdrop */}
-          {theme === 'volcano' ? (
-            <motion.div
-              className="absolute inset-0 backdrop-blur-sm overflow-hidden"
-              style={{
-                background: 'radial-gradient(circle at 30% 70%, #ff4500 0%, #ff6347 20%, #dc143c 40%, #8b0000 60%, #000000 100%)',
-                backgroundSize: '150% 150%'
-              }}
-              animate={{
-                backgroundPosition: ['0% 0%', '100% 100%', '0% 0%']
-              }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-              onClick={handleClose}
-            >
-              {/* Lava Bubbles */}
-              {[...Array(15)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute rounded-full"
-                  style={{
-                    background: `radial-gradient(circle, #ff4500, #ff6347, transparent)`,
-                    width: `${20 + i * 5}px`,
-                    height: `${20 + i * 5}px`,
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`
-                  }}
-                  animate={{
-                    y: [0, -50, 0],
-                    scale: [1, 1.5, 1],
-                    opacity: [0.3, 0.8, 0.3]
-                  }}
-                  transition={{
-                    duration: 3 + i * 0.2,
-                    repeat: Infinity,
-                    delay: i * 0.3
-                  }}
-                />
-              ))}
-            </motion.div>
-          ) : (
-            <motion.div
-              className="absolute inset-0 backdrop-blur-sm overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
-                backgroundSize: '400% 400%'
-              }}
-              animate={{
-                backgroundPosition: ['0% 50%', '100% 50%', '100% 100%', '0% 100%', '0% 50%']
-              }}
-              transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-              onClick={handleClose}
-            >
-              {/* Aurora Particles */}
-              {[...Array(20)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute rounded-full"
-                  style={{
-                    background: `linear-gradient(45deg, #4facfe, #00f2fe, #667eea)`,
-                    width: `${5 + i * 2}px`,
-                    height: `${5 + i * 2}px`,
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    filter: 'blur(1px)'
-                  }}
-                  animate={{
-                    x: [0, 100, -100, 0],
-                    y: [0, -100, 100, 0],
-                    opacity: [0.2, 1, 0.2],
-                    scale: [1, 2, 1]
-                  }}
-                  transition={{
-                    duration: 6 + i * 0.5,
-                    repeat: Infinity,
-                    delay: i * 0.2
-                  }}
-                />
-              ))}
-            </motion.div>
-          )}
+          {/* Simplified Backdrop */}
+          <motion.div
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{
+              background: theme === 'volcano'
+                ? 'radial-gradient(circle at 50% 50%, #ff4500 0%, #dc143c 50%, #000000 100%)'
+                : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)'
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={handleClose}
+          />
 
           {/* Close Button */}
           <motion.button
@@ -198,41 +132,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           <motion.div
             className={`relative w-full max-w-md backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border-2 ${
               theme === 'volcano' 
-                ? 'bg-gradient-to-br from-red-900/30 to-orange-900/30 border-orange-500/50' 
-                : 'bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-cyan-400/50'
+                ? 'bg-red-900/40 border-orange-500/50' 
+                : 'bg-purple-900/40 border-cyan-400/50'
             }`}
-            initial={{ scale: 0.8, opacity: 0, rotateY: 180 }}
-            animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-            exit={{ scale: 0.8, opacity: 0, rotateY: -180 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Animated Modal Background */}
-            <motion.div
-              className="absolute inset-0 opacity-20"
-              style={{
-                background: theme === 'volcano'
-                  ? 'radial-gradient(circle at center, #ff4500 0%, #ff6347 50%, #dc143c 100%)'
-                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-                backgroundSize: '200% 200%'
-              }}
-              animate={{
-                backgroundPosition: ['0% 0%', '100% 100%', '0% 0%']
-              }}
-              transition={{ duration: 5, repeat: Infinity }}
-            />
 
             <div className="relative p-8 z-10">
               {/* Header */}
               <div className="text-center mb-8">
-                <motion.div
-                  className="flex justify-center mb-4"
-                  animate={{
-                    rotate: [0, 360],
-                    scale: [1, 1.1, 1]
-                  }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                >
+                <div className="flex justify-center mb-4">
                   <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${
                     theme === 'volcano' 
                       ? 'bg-gradient-to-br from-orange-500 to-red-600' 
@@ -240,19 +153,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   }`}>
                     {theme === 'volcano' ? '🌋' : '🌌'}
                   </div>
-                </motion.div>
-                <motion.h2
-                  className={`text-3xl font-bold mb-2 bg-gradient-to-r bg-clip-text text-transparent ${
-                    theme === 'volcano'
-                      ? 'from-orange-400 to-red-400'
-                      : 'from-cyan-400 to-purple-400'
-                  }`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
+                </div>
+                <h2 className={`text-3xl font-bold mb-2 ${
+                  theme === 'volcano' ? 'text-orange-400' : 'text-cyan-400'
+                }`}>
                   {mode === 'login' ? 'Sign In' : 'Sign Up'}
-                </motion.h2>
+                </h2>
                 <p className="text-white/80">
                   {mode === 'login' ? 'Already have an account? Sign in below.' : 'Sign up to begin your cinematic journey.'}
                 </p>
@@ -265,6 +171,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" />
@@ -355,28 +262,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 
                 <motion.button
                   type="submit"
-                  className={`w-full py-4 font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-white relative overflow-hidden ${
+                  className={`w-full py-4 font-semibold rounded-2xl text-white transition-all duration-200 ${
                     theme === 'volcano'
-                      ? 'bg-gradient-to-r from-orange-500 to-red-600'
-                      : 'bg-gradient-to-r from-cyan-500 to-purple-600'
+                      ? 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700'
+                      : 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700'
                   }`}
-                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  animate={{
-                    boxShadow: [
-                      `0 0 20px ${theme === 'volcano' ? '#ff4500' : '#4facfe'}40`,
-                      `0 0 40px ${theme === 'volcano' ? '#ff4500' : '#4facfe'}60`,
-                      `0 0 20px ${theme === 'volcano' ? '#ff4500' : '#4facfe'}40`
-                    ]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  transition={{ duration: 0.1 }}
                 >
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                    animate={{ x: ['-100%', '100%'] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-                  />
-                  <span className="relative z-10">{mode === 'login' ? 'Sign In' : 'Sign Up'}</span>
+                  {mode === 'login' ? 'Sign In' : 'Sign Up'}
                 </motion.button>
               </form>
 
@@ -384,19 +279,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               <div className="text-center mt-6">
                 <p className="text-white/70">
                   {mode === 'login' ? "Don't have an account?" : "Already have an account?"}
-                  <motion.button
+                  <button
                     onClick={() => {
                       setMode(mode === 'login' ? 'signup' : 'login');
                     }}
-                    className={`ml-2 font-semibold transition-colors duration-300 ${
+                    className={`ml-2 font-semibold transition-colors duration-200 ${
                       theme === 'volcano'
                         ? 'text-orange-400 hover:text-orange-300'
                         : 'text-cyan-400 hover:text-cyan-300'
                     }`}
-                    whileHover={{ scale: 1.05 }}
                   >
                     {mode === 'login' ? 'Sign up' : 'Sign in'}
-                  </motion.button>
+                  </button>
                 </p>
               </div>
             </div>
