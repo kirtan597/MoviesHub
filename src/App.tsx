@@ -13,6 +13,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import EmptyState from './components/EmptyState';
 import ErrorBoundary from './components/ErrorBoundary';
 import ParticleBackground from './components/ParticleBackground';
+import MovieReelOverlay from './components/MovieReelOverlay';
 import AuthPrompt from './components/AuthPrompt';
 import AuthModal from './components/AuthModal';
 import UserProfile from './components/UserProfile';
@@ -176,6 +177,7 @@ function App() {
         {/* Dynamic Background */}
         <div className="dynamic-bg" />
         <ParticleBackground />
+        {currentPage === 'home' && <MovieReelOverlay />}
         
         {/* Main Content */}
         <div className="relative z-10">
