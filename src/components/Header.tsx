@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Search, Film, Heart, Bookmark, Menu, Sparkles, X, LogIn, UserPlus, Zap, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from './ThemeToggle';
-import AuthModal from './AuthModal';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -14,6 +13,9 @@ interface HeaderProps {
   onAuthRequired: (feature: string) => void;
   user?: {name: string, email: string} | null;
   onProfileClick?: () => void;
+  onOpenAuth?: (mode: 'login' | 'signup') => void;
+  currentPage?: 'home' | 'favorites' | 'watchlist';
+  onPageChange?: (page: 'home' | 'favorites' | 'watchlist') => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -26,10 +28,11 @@ const Header: React.FC<HeaderProps> = ({
   onAuthRequired,
   user,
   onProfileClick,
+  onOpenAuth,
+  currentPage = 'home',
+  onPageChange,
 }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
@@ -83,6 +86,7 @@ const Header: React.FC<HeaderProps> = ({
               className="flex items-center space-x-4 group cursor-pointer"
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => onPageChange?.('home')}
             >
               <div className="relative">
                 {/* Main Logo Container */}
@@ -191,15 +195,23 @@ const Header: React.FC<HeaderProps> = ({
             </motion.div>
 
             {/* Center Navigation */}
-            <nav className="hidden md:flex items-center space-x-2">
+            <nav className="flex md:flex items-center space-x-2">
               {[
                 { id: 'favorites', icon: Heart, label: 'Favorites', gradient: 'from-pink-500 to-red-500' },
                 { id: 'watchlist', icon: Bookmark, label: 'Watchlist', gradient: 'from-blue-500 to-cyan-500' }
               ].map((item, index) => (
                 <motion.button
                   key={item.id}
-                  onClick={() => onAuthRequired(item.label)}
-                  className="relative flex items-center space-x-2 px-4 lg:px-6 py-3 rounded-2xl font-medium transition-all duration-300 text-white/80 hover:text-white group overflow-hidden"
+                  onClick={() => {
+                    if (user) {
+                      onPageChange?.(item.id as 'favorites' | 'watchlist');
+                    } else {
+                      onAuthRequired(item.label);
+                    }
+                  }}
+                  className={`relative flex items-center space-x-2 px-4 lg:px-6 py-3 rounded-2xl font-medium transition-all duration-300 group overflow-hidden ${
+                    currentPage === item.id ? 'text-white bg-gradient-to-r ' + item.gradient : 'text-white/80 hover:text-white'
+                  }`}
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, x: 20 }}
@@ -212,8 +224,8 @@ const Header: React.FC<HeaderProps> = ({
                     whileHover={{ scale: 1.1 }}
                   />
                   
-                  <item.icon className="h-5 w-5 relative z-10" />
-                  <span className="relative z-10 hidden lg:inline">{item.label}</span>
+                  <item.icon className="h-4 w-4 sm:h-5 sm:w-5 relative z-10" />
+                  <span className="relative z-10 hidden sm:inline">{item.label}</span>
                   
                   {/* Shimmer Effect */}
                   <motion.div
@@ -273,10 +285,7 @@ const Header: React.FC<HeaderProps> = ({
                 <>
                   {/* Enhanced Auth Buttons - Moved to end */}
               <motion.button
-                onClick={() => {
-                  setAuthMode('login');
-                  setIsAuthModalOpen(true);
-                }}
+                onClick={() => onOpenAuth?.('login')}
                 className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl font-medium transition-all duration-300 backdrop-blur-sm relative overflow-hidden group"
                 style={{
                   background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%)',
@@ -296,10 +305,7 @@ const Header: React.FC<HeaderProps> = ({
               </motion.button>
               
               <motion.button
-                onClick={() => {
-                  setAuthMode('signup');
-                  setIsAuthModalOpen(true);
-                }}
+                onClick={() => onOpenAuth?.('signup')}
                 className="relative flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-white font-semibold shadow-lg transition-all duration-300 overflow-hidden border"
                 style={{
                   background: 'linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%)',
@@ -356,10 +362,16 @@ const Header: React.FC<HeaderProps> = ({
                 <motion.button
                   key={item.id}
                   onClick={() => {
-                    onAuthRequired(item.label);
+                    if (user) {
+                      onPageChange?.(item.id as 'favorites' | 'watchlist');
+                    } else {
+                      onAuthRequired(item.label);
+                    }
                     onMenuToggle();
                   }}
-                  className="relative flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all text-white/70 hover:text-white group overflow-hidden"
+                  className={`relative flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all group overflow-hidden ${
+                    currentPage === item.id ? 'text-white bg-gradient-to-r ' + item.gradient : 'text-white/70 hover:text-white'
+                  }`}
                   whileHover={{ x: 6, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   initial={{ opacity: 0, x: -20 }}
@@ -611,12 +623,7 @@ const Header: React.FC<HeaderProps> = ({
         )}
       </AnimatePresence>
       
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        initialMode={authMode}
-      />
+
     </>
   );
 };

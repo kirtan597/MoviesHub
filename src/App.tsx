@@ -18,6 +18,8 @@ import AuthModal from './components/AuthModal';
 import UserProfile from './components/UserProfile';
 import Toast from './components/Toast';
 import Footer from './components/Footer';
+import FavoritesPage from './components/FavoritesPage';
+import WatchlistPage from './components/WatchlistPage';
 
 import './index.css';
 
@@ -37,12 +39,12 @@ function App() {
   const [favorites, setFavorites] = useLocalStorage<number[]>('kpxhub-favorites', []);
   const [watchlist, setWatchlist] = useLocalStorage<number[]>('kpxhub-watchlist', []);
   const [appError, setAppError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<'home' | 'favorites' | 'watchlist'>('home');
 
   // Error boundary for the app
   useEffect(() => {
     const handleError = (error: ErrorEvent) => {
       console.error('App Error:', error);
-      setAppError('Something went wrong. Please refresh the page.');
     };
     
     window.addEventListener('error', handleError);
@@ -66,8 +68,18 @@ function App() {
     );
   }
 
-  const { movies = [], loading = false, error, hasMore = false, loadMore } = useMovies(activeCategory, selectedGenre) || {};
-  const { searchResults = [], searchLoading = false, searchError } = useSearch(searchQuery) || {};
+  const moviesData = useMovies(activeCategory, selectedGenre);
+  const searchData = useSearch(searchQuery);
+  
+  const movies = moviesData?.movies || [];
+  const loading = moviesData?.loading || false;
+  const error = moviesData?.error;
+  const hasMore = moviesData?.hasMore || false;
+  const loadMore = moviesData?.loadMore;
+  
+  const searchResults = searchData?.searchResults || [];
+  const searchLoading = searchData?.searchLoading || false;
+  const searchError = searchData?.searchError;
 
   // Get user's favorite and watchlist movies
   const favoriteMovies = movies.filter(movie => favorites.includes(movie.id));
@@ -112,11 +124,9 @@ function App() {
   const handleAuthRequired = (feature: string) => {
     if (user) {
       if (feature === 'Favorites') {
-        setActiveCategory('favorites');
-        setSearchQuery('');
+        setCurrentPage('favorites');
       } else if (feature === 'Watchlist') {
-        setActiveCategory('watchlist');
-        setSearchQuery('');
+        setCurrentPage('watchlist');
       }
       return;
     }
@@ -127,14 +137,14 @@ function App() {
   const handleAuthSuccess = (userData: {name: string, email: string}, isSignup: boolean) => {
     if (isSignup) {
       // Show account created message but don't log in yet
-      setToast({isOpen: true, type: 'success', message: `✅ Sign-up successful! Welcome aboard, ${userData.name} 🍿`});
+      setToast({isOpen: true, type: 'success', message: `✅ Account created successfully! Welcome ${userData.name}! Please sign in now.`});
     } else {
-      // Login success
+      // Login success - set user and close modal
       setUser(userData);
       setIsAuthModalOpen(false);
-      setToast({isOpen: true, type: 'success', message: '🔐 Signed in successfully — let\'s explore the world of movies together!'});
+      setToast({isOpen: true, type: 'success', message: `🎬 Welcome back, ${userData.name}! Ready to explore movies?`});
     }
-    setTimeout(() => setToast(prev => ({...prev, isOpen: false})), 3000);
+    setTimeout(() => setToast(prev => ({...prev, isOpen: false})), 4000);
   };
 
   const handleSignOut = () => {
@@ -179,16 +189,43 @@ function App() {
             onAuthRequired={handleAuthRequired}
             user={user}
             onProfileClick={() => setIsProfileOpen(true)}
+            onOpenAuth={(mode) => {
+              setAuthMode(mode);
+              setIsAuthModalOpen(true);
+            }}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
           />
 
-          {!searchQuery && <HeroSection />}
+          {currentPage === 'home' && (
+            <>
+              {!searchQuery && <HeroSection />}
+              <CategoryTabs
+                activeCategory={activeCategory}
+                onCategoryChange={handleCategoryChange}
+              />
+            </>
+          )}
 
-          <CategoryTabs
-            activeCategory={activeCategory}
-            onCategoryChange={handleCategoryChange}
-          />
+          {currentPage === 'favorites' && (
+            <FavoritesPage
+              movies={favoriteMovies}
+              onRemoveFavorite={handleToggleFavorite}
+              onMovieClick={handleMovieClick}
+            />
+          )}
 
-          <main className="container mx-auto px-6 py-12">
+          {currentPage === 'watchlist' && (
+            <WatchlistPage
+              movies={watchlistMovies}
+              onRemoveFromWatchlist={handleToggleWatchlist}
+              onMovieClick={handleMovieClick}
+              onBackToHome={() => setCurrentPage('home')}
+            />
+          )}
+
+          {currentPage === 'home' && (
+            <main className="container mx-auto px-6 py-12">
             <AnimatePresence>
               {isLoading ? (
                 <motion.div
@@ -299,8 +336,9 @@ function App() {
               )}
             </AnimatePresence>
           </main>
+          )}
 
-          <Footer />
+          {currentPage === 'home' && <Footer />}
         </div>
 
         {/* Modals */}

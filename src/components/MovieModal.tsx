@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Star, Calendar, Clock, Heart, Bookmark, Play, User } from 'lucide-react';
+import { X, Star, Calendar, Clock, Heart, Bookmark, Play, User, Monitor } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Movie, UserReview } from '../types/movie';
 import { movieService } from '../services/tmdb';
+
 
 interface MovieModalProps {
   movie: Movie | null;
@@ -33,6 +34,8 @@ const MovieModal: React.FC<MovieModalProps> = ({
   const [userRating, setUserRating] = useState(0);
   const [userReview, setUserReview] = useState('');
   const [userName, setUserName] = useState('');
+  const [isStreamingOpen, setIsStreamingOpen] = useState(false);
+
 
   useEffect(() => {
     if (movie && isOpen) {
@@ -80,9 +83,9 @@ const MovieModal: React.FC<MovieModalProps> = ({
     ? movieService.getBackdropUrl(movie.backdrop_path)
     : '/api/placeholder/1280/720';
 
-  const trailer = movieDetails?.videos?.find(
-    video => video.type === 'Trailer' && video.site === 'YouTube'
-  );
+  const trailer = movieDetails?.videos && Array.isArray(movieDetails.videos) 
+    ? movieDetails.videos.find(video => video.type === 'Trailer' && video.site === 'YouTube')
+    : null;
 
   return (
     <AnimatePresence>
@@ -95,7 +98,7 @@ const MovieModal: React.FC<MovieModalProps> = ({
         >
           <div className="min-h-screen bg-black bg-opacity-75 flex items-center justify-center p-4">
             <motion.div
-              className="bg-slate-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-slate-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto mx-2 sm:mx-4 modal-content"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
@@ -148,8 +151,19 @@ const MovieModal: React.FC<MovieModalProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="p-6 border-b border-slate-800">
-                <div className="flex items-center space-x-4">
+              <div className="p-4 sm:p-6 border-b border-slate-800">
+                <div className="flex items-center space-x-2 sm:space-x-4 flex-wrap gap-2">
+                  <motion.button
+                    onClick={() => window.open('https://www.youtube.com/watch?v=wVfTHDhaU9I', '_blank')}
+                    className="flex items-center space-x-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all font-semibold text-sm sm:text-base touch-target"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Monitor className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden sm:inline">Watch Now</span>
+                    <span className="sm:hidden">Watch</span>
+                  </motion.button>
+
                   <motion.button
                     onClick={() => onToggleFavorite(movie)}
                     className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
@@ -214,7 +228,7 @@ const MovieModal: React.FC<MovieModalProps> = ({
               </div>
 
               {/* Content */}
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 {activeTab === 'overview' && (
                   <div className="space-y-4">
                     {movieDetails?.tagline && (
@@ -351,8 +365,11 @@ const MovieModal: React.FC<MovieModalProps> = ({
               </div>
             </motion.div>
           </div>
+
         </motion.div>
       )}
+      
+
     </AnimatePresence>
   );
 };
